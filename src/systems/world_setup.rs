@@ -2,6 +2,7 @@ use crate::components::markers::User;
 use crate::components::object_bundle::ObjectBundle;
 use crate::components::past_locations::PastLocations;
 use crate::components::physics_object::PhysicsObject;
+use crate::components::propulsion::Propulsion;
 use crate::constants::{DISTANCE_SCALE, EARTH_RADIUS, MOON_RADIUS, PLANET_SCALE};
 use bevy::prelude::*;
 use bevy::render::mesh::Triangle2dMeshBuilder;
@@ -81,15 +82,16 @@ pub fn create_world(
                 translation: Vec3::new(0., 6_371_000. * PLANET_SCALE + 100., 0.),
                 ..Default::default()
             },
-            physics_object: PhysicsObject::new(user_mass, 10.0, user_vel),
+            physics_object: PhysicsObject::new(user_mass, 8.0, user_vel),
             mesh2d: Mesh2d(meshes.add(Triangle2dMeshBuilder::new(
-                Vec2::new(0., 16.),
-                Vec2::new(-8., 0.),
-                Vec2::new(8., 0.),
+                Vec2::new(0., 8.),
+                Vec2::new(-8., -8.),
+                Vec2::new(8., -8.),
             ))),
             mesh_material: MeshMaterial2d(materials.add(Color::srgb(0., 1., 0.))),
         },
         PastLocations::new(),
         User,
+        Propulsion { thrust: 10. },
     ));
 }

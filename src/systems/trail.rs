@@ -9,8 +9,8 @@ pub fn add_trails(mut query: Query<(&Transform, &mut PastLocations)>) {
     }
 }
 
-pub fn render_trails(mut gizmos: Gizmos, query: Query<&PastLocations>) {
-    for past_locations in query.iter() {
+pub fn render_trails(mut gizmos: Gizmos, query: Query<(&PastLocations, &Transform)>) {
+    for (past_locations, transform) in query.iter() {
         let points = &past_locations.points;
         if points.len() < 2 {
             continue;
@@ -24,5 +24,12 @@ pub fn render_trails(mut gizmos: Gizmos, query: Query<&PastLocations>) {
             let color = Color::srgba(1.0, 1.0, 1.0, alpha);
             gizmos.line(start, end, color);
         }
+
+        // Interpolate line from last trail point to current position
+        gizmos.line(
+            points[points.len() - 1],
+            transform.translation,
+            Color::WHITE,
+        );
     }
 }

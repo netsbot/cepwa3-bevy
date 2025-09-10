@@ -1,8 +1,8 @@
+use crate::components::markers::User;
 use bevy::input::ButtonState;
 use bevy::input::mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::components::markers::User;
 
 #[derive(Resource)]
 pub struct DragState(pub bool, pub Vec2);
@@ -13,12 +13,18 @@ impl Default for DragState {
     }
 }
 
-pub fn create_camera(mut commands: Commands) {
+pub fn create_camera(mut commands: Commands, query: Query<&Transform, With<User>>) {
+    let (camera_pos, scale) = if let Some(user_transform) = query.iter().next() {
+        (user_transform.translation, 1.)
+    } else {
+        (Vec3::ZERO, 3e4)
+    };
+
     commands.spawn((
         Camera2d::default(),
-        Transform::from_xyz(0.0, 0.0, 0.0),
+        Transform::from_translation(camera_pos),
         Projection::from(OrthographicProjection {
-            scale: 3e4, // initial zoom level
+            scale, // initial zoom level
             ..OrthographicProjection::default_2d()
         }),
     ));
