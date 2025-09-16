@@ -7,5 +7,3 @@ pub const DISTANCE_SCALE: f32 = 1.0 / 50.0; // 1:50
 
 pub const EARTH_RADIUS: f32 = 6_371_000. * PLANET_SCALE; // in meters, scaled
 pub const MOON_RADIUS: f32 = 1_737_100. * PLANET_SCALE; // in meters, scaled
-
-pub const MAX_TRAIL_LENGTH: usize = 64; // Maximum number of points in the trail

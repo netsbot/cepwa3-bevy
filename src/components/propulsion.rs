@@ -2,17 +2,15 @@ use bevy::prelude::Component;
 
 #[derive(Component)]
 pub struct Propulsion {
-    pub thrust: f32, // Thrust force in Newtons
-}
-
-impl Propulsion {
-    pub fn new(thrust: f32) -> Self {
-        Self { thrust }
-    }
+    pub max_thrust: f32,        // Maximum thrust force in Newtons
+    pub thrust_percentage: f32, // current user set thrust level
 }
 
 impl Default for Propulsion {
     fn default() -> Self {
-        Self { thrust: 10.0 }
+        Self {
+            max_thrust: 10.0,
+            thrust_percentage: 0.0,
+        }
     }
 }

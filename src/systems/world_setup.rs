@@ -1,6 +1,5 @@
 use crate::components::markers::User;
 use crate::components::object_bundle::ObjectBundle;
-use crate::components::past_locations::PastLocations;
 use crate::components::physics_object::PhysicsObject;
 use crate::components::propulsion::Propulsion;
 use crate::constants::{DISTANCE_SCALE, EARTH_RADIUS, MOON_RADIUS, PLANET_SCALE};
@@ -13,85 +12,98 @@ pub fn create_world(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let earth_mass = 5.972e24 * PLANET_SCALE.powi(3);
-    let moon1_mass = 7.342e22 * PLANET_SCALE.powi(3);
-    let moon2_mass = 1.5e22 * PLANET_SCALE.powi(3);
-    let user_mass: f32 = 10.;
 
-    // positions
-    let moon1_pos = [384_400_000. * DISTANCE_SCALE, 0., 0.].into();
-    let moon2_pos = [-384_400_000. * DISTANCE_SCALE * 0.6, 0., 0.].into();
+    // Moon masses - variety of sizes
+    let luna_mass = 7.342e22 * PLANET_SCALE.powi(3); // Original large moon (Luna)
+    let europa_mass = 4.8e22 * PLANET_SCALE.powi(3); // Medium moon (Europa-like)
 
-    // velocities
-    let moon_speed = 1_022. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt();
-    let moon1_vel = [0., moon_speed, 0.].into();
-    let moon2_vel = [0., moon_speed, 0.].into();
+    let user_mass: f32 = 589_000.;
+
+    // Moon positions - spread around Earth for interesting dynamics
+    let luna_pos = [384_400_000. * DISTANCE_SCALE, 0., 0.].into(); // Traditional moon distance
+    let europa_pos = [
+        -280_000_000. * DISTANCE_SCALE,
+        -50_000_000. * DISTANCE_SCALE,
+        0.,
+    ]
+    .into(); // Closer, opposite side
+
+    // Calculate velocities for stable orbits
+    let luna_speed = 1_022. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt();
+    let europa_speed = 1_280. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt(); // Faster for closer orbit
+
+    // Moon velocities
+    let luna_vel = [0., luna_speed, 0.].into();
+    let europa_vel = [0., -europa_speed, 0.].into();
+
     let user_vel: Vec3 = [0., 0., 0.].into();
 
-    // total momentum cancellation for Earth
+    // Total momentum cancellation for Earth
     let total_momentum: Vec3 =
-        moon1_vel * moon1_mass + moon2_vel * moon2_mass + user_vel * user_mass;
+        luna_vel * luna_mass + europa_vel * europa_mass + user_vel * user_mass;
     let earth_vel = -total_momentum / earth_mass;
 
-    // prepare mesh/material handles
+    // Prepare mesh/material handles with different colors
     let earth_mesh = Mesh2d(meshes.add(Circle::new(EARTH_RADIUS)));
-    let earth_material = MeshMaterial2d(materials.add(Color::srgb(0., 0., 1.)));
+    let earth_material = MeshMaterial2d(materials.add(Color::srgb(0.2, 0.6, 1.0))); // Blue Earth
 
-    let moon_mesh = Mesh2d(meshes.add(Circle::new(MOON_RADIUS)));
-    let moon_material = MeshMaterial2d(materials.add(Color::WHITE));
+    let luna_mesh = Mesh2d(meshes.add(Circle::new(MOON_RADIUS)));
+    let luna_material = MeshMaterial2d(materials.add(Color::srgb(0.9, 0.9, 0.8))); // Pale gray Luna
 
-    // build bundles
-    commands.spawn((
-        ObjectBundle {
+    let europa_mesh = Mesh2d(meshes.add(Circle::new(MOON_RADIUS * 0.8)));
+    let europa_material = MeshMaterial2d(materials.add(Color::srgb(0.8, 0.9, 1.0))); // Pale blue Europa
+
+    // Build Earth
+    let earth = commands
+        .spawn((ObjectBundle {
             transform: Transform::default(),
-            physics_object: PhysicsObject::new(earth_mass, EARTH_RADIUS, earth_vel),
+            physics_object: PhysicsObject::new(earth_mass, EARTH_RADIUS, earth_vel, None),
             mesh2d: earth_mesh.clone(),
             mesh_material: earth_material.clone(),
-        },
-        PastLocations::new(),
-    ));
+        },))
+        .id();
 
+    // Luna - The traditional large moon (gray)
+    commands.spawn((ObjectBundle {
+        transform: Transform {
+            translation: luna_pos,
+            ..default()
+        },
+        physics_object: PhysicsObject::new(luna_mass, MOON_RADIUS, luna_vel, Some(earth)),
+        mesh2d: luna_mesh.clone(),
+        mesh_material: luna_material.clone(),
+    },));
+
+    // Europa - Medium blue moon
+    commands.spawn((ObjectBundle {
+        transform: Transform {
+            translation: europa_pos,
+            ..default()
+        },
+        physics_object: PhysicsObject::new(europa_mass, MOON_RADIUS * 0.8, europa_vel, Some(earth)),
+        mesh2d: europa_mesh.clone(),
+        mesh_material: europa_material.clone(),
+    },));
+
+    // User spacecraft (Green triangle)
     commands.spawn((
         ObjectBundle {
             transform: Transform {
-                translation: moon1_pos,
-                ..Default::default()
+                translation: Vec3::new(0., EARTH_RADIUS, 0.),
+                ..default()
             },
-            physics_object: PhysicsObject::new(moon1_mass, MOON_RADIUS, moon1_vel),
-            mesh2d: moon_mesh.clone(),
-            mesh_material: moon_material.clone(),
-        },
-        PastLocations::new(),
-    ));
-
-    commands.spawn((
-        ObjectBundle {
-            transform: Transform {
-                translation: moon2_pos,
-                ..Default::default()
-            },
-            physics_object: PhysicsObject::new(moon2_mass, MOON_RADIUS, moon2_vel),
-            mesh2d: moon_mesh.clone(),
-            mesh_material: moon_material.clone(),
-        },
-        PastLocations::new(),
-    ));
-
-    commands.spawn((
-        ObjectBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 6_371_000. * PLANET_SCALE + 100., 0.),
-                ..Default::default()
-            },
-            physics_object: PhysicsObject::new(user_mass, 8.0, user_vel),
+            physics_object: PhysicsObject::new(user_mass, 8.0, earth_vel, Some(earth)),
             mesh2d: Mesh2d(meshes.add(Triangle2dMeshBuilder::new(
-                Vec2::new(0., 8.),
+                Vec2::new(0., 12.),
                 Vec2::new(-8., -8.),
                 Vec2::new(8., -8.),
             ))),
             mesh_material: MeshMaterial2d(materials.add(Color::srgb(0., 1., 0.))),
         },
-        PastLocations::new(),
         User,
-        Propulsion { thrust: 10. },
+        Propulsion {
+            max_thrust: 1_688_000.,
+            ..default()
+        },
     ));
 }
