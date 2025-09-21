@@ -182,8 +182,12 @@ https://github.com/netsbot/cepwa3-bevy
 ### Cite all sources that inspired or influenced your project
 
 [N-body problem](https://natureofcode.com/forces/#the-n-body-problem)
+
 [Bevy cheat book](bevy-cheatbook.github.io/introduction.html)
+
 [Rocket engine sound](https://pixabay.com/sound-effects/rocket-loop-99748/)
+
+[Bevy project template](https://github.com/NiklasEi/bevy_game_template)
 
 ### Anyone gave useful feedback? Put here too!
 
