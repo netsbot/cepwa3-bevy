@@ -22,7 +22,7 @@ pub fn create_camera(mut commands: Commands, query: Query<&Transform, With<User>
     };
 
     commands.spawn((
-        Camera2d::default(),
+        Camera2d,
         Transform::from_translation(camera_pos),
         Projection::from(OrthographicProjection {
             scale, // initial zoom level
@@ -41,8 +41,8 @@ pub fn zoom_camera(
     let mut scroll_lines = 0.0f32;
     for ev in scroll_evr.read() {
         scroll_lines += match ev.unit {
-            MouseScrollUnit::Line => ev.y as f32,
-            MouseScrollUnit::Pixel => (ev.y as f32) / 50.0, // convert pixels to ~lines
+            MouseScrollUnit::Line => ev.y,
+            MouseScrollUnit::Pixel => ev.y / 50.0, // convert pixels to ~lines
         };
     }
 
@@ -101,22 +101,19 @@ pub fn pan_camera(
 
     for (mut transform, proj) in &mut q_cam {
         // Follow central body movement
-        if let Ok(user_physics) = user_query.single() {
-            if let Some(central_body_entity) = user_physics.central_body {
-                if let Ok((_, central_body_physics)) = physics_query.get(central_body_entity) {
-                    let central_body_velocity = central_body_physics.vel;
-                    transform.translation += central_body_velocity * time.delta_secs();
-                }
+        if let Ok(user_physics) = user_query.single()
+            && let Some(central_body_entity) = user_physics.central_body
+            && let Ok((_, central_body_physics)) = physics_query.get(central_body_entity) {
+                let central_body_velocity = central_body_physics.vel;
+                transform.translation += central_body_velocity * time.delta_secs();
             }
-        }
 
         // Handle manual panning
-        if drag.0 {
-            if let Projection::Orthographic(ortho) = proj {
+        if drag.0
+            && let Projection::Orthographic(ortho) = proj {
                 // apply incremental delta to camera translation (invert X to match screen coords)
                 transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
             }
-        }
     }
 
     // update last cursor so next frame uses incremental movement
@@ -151,17 +148,15 @@ pub fn follow_central_body(
     physics_query: Query<&PhysicsObject, Without<Camera2d>>,
 ) {
     // Get the user's central body
-    if let Ok(user_physics) = user_query.single() {
-        if let Some(central_body_entity) = user_physics.central_body {
-            if let Ok(central_body_physics) = physics_query.get(central_body_entity) {
-                let central_body_velocity = central_body_physics.vel;
-                let dt = time.delta_secs();
-                
-                // Update camera translation: translation += central_body_velocity * dt
-                for mut camera_transform in camera_query.iter_mut() {
-                    camera_transform.translation += central_body_velocity * dt;
-                }
+    if let Ok(user_physics) = user_query.single()
+        && let Some(central_body_entity) = user_physics.central_body
+        && let Ok(central_body_physics) = physics_query.get(central_body_entity) {
+            let central_body_velocity = central_body_physics.vel;
+            let dt = time.delta_secs();
+            
+            // Update camera translation: translation += central_body_velocity * dt
+            for mut camera_transform in camera_query.iter_mut() {
+                camera_transform.translation += central_body_velocity * dt;
             }
         }
-    }
 }

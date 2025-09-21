@@ -1,27 +1,3 @@
-fn check_earth_landing_objective(
-    tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
-    is_moon_central: bool,
-) {
-    // For earth landing, we must be closest to Earth (not Moon)
-    if is_moon_central {
-        return;
-    }
-
-    // Check if we're close enough to Earth to consider it a landing
-    // Use a more reasonable landing tolerance (1km above surface)
-    let landing_tolerance = 1000.0; // 1km
-    let altitude_above_surface = central_body_distance - central_body_radius;
-    
-    if altitude_above_surface <= landing_tolerance {
-        tracker.progress.complete_current(central_body_distance);
-        info!(
-            "Earth landing achieved! Altitude above surface: {:.1} m",
-            altitude_above_surface
-        );
-    }
-}
 use crate::components::markers::User;
 use crate::components::objectives::{Objective, ObjectiveProgress};
 use crate::components::physics_object::PhysicsObject;
@@ -31,6 +7,45 @@ use crate::constants::{
 };
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
+
+
+/// Context about the celestial body the user is currently orbiting/near
+struct CelestialBodyContext {
+    distance: f32,
+    radius: f32,
+    position: Vec3,
+    is_moon_central: bool,
+}
+
+/// Context about the user's current state
+struct UserContext {
+    position: Vec3,
+    velocity: Vec3,
+}
+
+fn check_earth_landing_objective(
+    tracker: &mut ObjectiveTracker,
+    celestial_context: &CelestialBodyContext,
+) {
+    // For earth landing, we must be closest to Earth (not Moon)
+    if celestial_context.is_moon_central {
+        return;
+    }
+
+    // Check if we're close enough to Earth to consider it a landing
+    // Use a more reasonable landing tolerance (1km above surface)
+    let landing_tolerance = 1000.0; // 1km
+    let altitude_above_surface = celestial_context.distance - celestial_context.radius;
+    
+    if altitude_above_surface <= landing_tolerance {
+        tracker.progress.complete_current(celestial_context.distance);
+        info!(
+            "Earth landing achieved! Altitude above surface: {:.1} m",
+            altitude_above_surface
+        );
+    }
+}
+
 
 #[derive(Component)]
 pub struct ObjectiveTracker {
@@ -87,37 +102,38 @@ pub fn objectives_system(
                 (distance_from_earth, EARTH_RADIUS, Vec3::ZERO, false)
             };
 
+        let celestial_context = CelestialBodyContext {
+            distance: central_body_distance,
+            radius: central_body_radius,
+            position: central_body_position,
+            is_moon_central,
+        };
+
+        let user_context = UserContext {
+            position,
+            velocity,
+        };
+
         match tracker.progress.current {
             Objective::EscapeMoon => {
                 check_escape_moon_objective(
                     &mut tracker,
-                    central_body_distance,
-                    central_body_radius,
-                    position,
-                    central_body_position,
-                    velocity,
+                    &celestial_context,
                     &time,
-                    is_moon_central,
                 );
             }
             Objective::OrbitEarth => {
                 check_orbit_objective(
                     &mut tracker,
-                    central_body_distance,
-                    central_body_radius,
-                    position,
-                    central_body_position,
-                    velocity,
+                    &celestial_context,
+                    &user_context,
                     &time,
-                    is_moon_central,
                 );
             }
             Objective::LandOnEarth => {
                 check_earth_landing_objective(
                     &mut tracker, 
-                    central_body_distance,
-                    central_body_radius,
-                    is_moon_central,
+                    &celestial_context,
                 );
             }
         }
@@ -131,16 +147,11 @@ pub fn objectives_system(
 
 fn check_escape_moon_objective(
     tracker: &mut ObjectiveTracker,
-    _central_body_distance: f32,
-    _central_body_radius: f32,
-    _position: Vec3,
-    _central_body_position: Vec3,
-    _velocity: Vec3,
+    celestial_context: &CelestialBodyContext,
     time: &Time,
-    is_moon_central: bool,
 ) {
     // For escape moon objective, we need to NOT be orbiting the Moon anymore
-    if !is_moon_central {
+    if !celestial_context.is_moon_central {
         // We've escaped the Moon's sphere of influence!
         tracker.leo_stopwatch.tick(time.delta());
         
@@ -157,28 +168,24 @@ fn check_escape_moon_objective(
 
 fn check_orbit_objective(
     tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
-    position: Vec3,
-    central_body_position: Vec3,
-    velocity: Vec3,
+    celestial_context: &CelestialBodyContext,
+    user_context: &UserContext,
     time: &Time,
-    is_moon_central: bool,
 ) {
     // For LEO objective, we must be orbiting Earth (not Moon)
-    if is_moon_central {
+    if celestial_context.is_moon_central {
         tracker.leo_stopwatch.reset();
         return;
     }
 
     // Calculate altitude above central body's surface
-    let altitude = central_body_distance - central_body_radius;
+    let altitude = celestial_context.distance - celestial_context.radius;
 
     // Check if above minimum LEO altitude (40 km above Earth surface)
     if altitude >= LEO_MIN_ALTITUDE {
         // Check if orbit is stable by verifying velocity is roughly perpendicular to position
-        let relative_position = position - central_body_position;
-        let dot_product = relative_position.normalize().dot(velocity.normalize()).abs();
+        let relative_position = user_context.position - celestial_context.position;
+        let dot_product = relative_position.normalize().dot(user_context.velocity.normalize()).abs();
         let is_orbital_velocity = dot_product < 0.3; // Less than ~17 degrees off perpendicular
 
         if is_orbital_velocity {

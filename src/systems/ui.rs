@@ -6,6 +6,9 @@ use crate::systems::objectives::ObjectiveTracker;
 use crate::constants::{EARTH_RADIUS, LEO_MIN_ALTITUDE, MOON_RADIUS};
 use bevy::prelude::*;
 
+// Type alias to reduce complexity
+type MoonQuery<'w, 's> = Query<'w, 's, (&'static Transform, &'static PhysicsObject), (Without<User>, With<PhysicsObject>)>;
+
 pub fn create_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("jbnf.ttf");
     
@@ -25,7 +28,7 @@ pub fn update_ui_system(
     config: Res<Config>,
     user: Query<(&Transform, &Propulsion, &PhysicsObject, &ObjectiveTracker), With<User>>,
     mut ui: Query<&mut Text, With<UserInfoUi>>,
-    moon_query: Query<(&Transform, &PhysicsObject), (Without<User>, With<PhysicsObject>)>,
+    moon_query: MoonQuery,
 ) {
     let (def_transform, def_propulsion, def_phys, def_tracker) = (
         Transform::default(),
@@ -123,14 +126,12 @@ pub fn update_ui_system(
         } else {
             "✓ Full timewarp available"
         }
+    } else if altitude < 30000.0 {
+        "⚠ NO TIMEWARP (Too close to Earth)"
+    } else if altitude < 100000.0 {
+        "⚠ LIMITED TIMEWARP (Near Earth)"
     } else {
-        if altitude < 30000.0 {
-            "⚠ NO TIMEWARP (Too close to Earth)"
-        } else if altitude < 100000.0 {
-            "⚠ LIMITED TIMEWARP (Near Earth)"
-        } else {
-            "✓ Full timewarp available"
-        }
+        "✓ Full timewarp available"
     };
 
     **ui_text = format!(
