@@ -14,7 +14,7 @@ pub fn calculate_predictions_system(
     )>,
     physics_query: Query<(Entity, &Transform, &PhysicsObject), Without<User>>,
 ) {
-    for (entity, transform, phys, mut prediction) in &mut prediction_query {
+    for (_, transform, phys, mut prediction) in &mut prediction_query {
         if phys.vel.length_squared() < 2. {
             prediction.points.clear();
             continue;
@@ -40,6 +40,10 @@ pub fn calculate_predictions_system(
 
         let mut simulated_position = transform.translation;
         let mut simulated_velocity = phys.vel;
+        
+        // Also simulate the central body's movement (important for Moon orbits)
+        let mut simulated_central_position = central_transform.translation;
+        let simulated_central_velocity = central_phys.vel;
 
         let initial_relative_pos = transform.translation - central_transform.translation;
 
@@ -47,21 +51,32 @@ pub fn calculate_predictions_system(
         let mut prev_relative_pos = initial_relative_pos;
 
         for _ in 0..PREDICTION_POINTS {
-            prediction.points.push(simulated_position);
-
-            let distance_vec = central_transform.translation - simulated_position;
+            // Calculate gravity from the moving central body
+            let distance_vec = simulated_central_position - simulated_position;
             let distance_sq_softened = distance_vec.length_squared() + SOFTENING.powi(2);
             let inv_r_cubed = distance_sq_softened.powf(-1.5);
             let accel = G * central_phys.mass * inv_r_cubed * distance_vec;
+            
+            // Update spacecraft (gravity from central body only)
             simulated_velocity += accel * dt;
             simulated_position += simulated_velocity * dt;
+            
+            // Update central body position (assume it continues with constant velocity)
+            simulated_central_position += simulated_central_velocity * dt;
+            
+            // Store the position relative to the current central body position
+            // This makes orbits appear as circles around the central body
+            let relative_position = simulated_position - simulated_central_position;
+            let world_position = central_transform.translation + relative_position;
+            prediction.points.push(world_position);
 
-            // Check for collision and stop if detected
-            if check_collision(entity, simulated_position, phys, &physics_query) {
+            // Check for collision with the moving central body
+            let collision_distance = phys.radius + central_phys.radius;
+            if (simulated_position - simulated_central_position).length() < collision_distance {
                 break;
             }
 
-            let current_relative_pos = simulated_position - central_transform.translation;
+            let current_relative_pos = simulated_position - simulated_central_position;
             let angle = prev_relative_pos.angle_between(current_relative_pos);
             total_angle += angle;
 
@@ -72,27 +87,6 @@ pub fn calculate_predictions_system(
             prev_relative_pos = current_relative_pos;
         }
     }
-}
-
-fn check_collision(
-    entity: Entity,
-    position: Vec3,
-    phys: &PhysicsObject,
-    physics_query: &Query<(Entity, &Transform, &PhysicsObject), Without<User>>,
-) -> bool {
-    for (other_entity, other_transform, other_phys) in physics_query.iter() {
-        if other_entity == entity {
-            continue;
-        }
-
-        let distance = (position - other_transform.translation).length();
-        let collision_distance = phys.radius + other_phys.radius;
-
-        if distance < collision_distance {
-            return true;
-        }
-    }
-    false
 }
 
 pub fn render_trajectory_predictions(mut gizmos: Gizmos, query: Query<&TrajectoryPrediction>) {

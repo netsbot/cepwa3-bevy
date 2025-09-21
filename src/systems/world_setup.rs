@@ -4,6 +4,7 @@ use crate::components::physics_object::PhysicsObject;
 use crate::components::propulsion::Propulsion;
 use crate::components::trajectory_prediction::TrajectoryPrediction;
 use crate::constants::{DISTANCE_SCALE, EARTH_RADIUS, MOON_RADIUS, PLANET_SCALE};
+use crate::systems::objectives::ObjectiveTracker;
 use bevy::prelude::*;
 use bevy::render::mesh::Triangle2dMeshBuilder;
 
@@ -92,7 +93,7 @@ pub fn create_world(
         TrajectoryPrediction::new(),
     ));
 
-    // User spacecraft (Green triangle)
+    // User spacecraft (Green triangle) - spawn on Earth's surface
     commands.spawn((
         ObjectBundle {
             transform: Transform {
@@ -113,5 +114,6 @@ pub fn create_world(
             ..default()
         },
         TrajectoryPrediction::new(),
+        ObjectiveTracker::default(),
     ));
 }

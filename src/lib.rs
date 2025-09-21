@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::systems::{ui, user_control};
+use crate::systems::{ui, user_control, objectives};
 use bevy::prelude::*;
 use systems::{camera, physics, prediction, world_setup};
 
@@ -52,6 +52,7 @@ impl Plugin for Game {
                 camera::zoom_camera,
                 camera::pan_camera,
                 camera::ignore_camera_scale_for_users,
+                objectives::objectives_system,
                 ui::update_ui_system,
             ),
         );

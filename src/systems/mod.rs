@@ -4,3 +4,4 @@ pub mod prediction;
 pub mod physics;
 pub mod user_control;
 pub mod ui;
+pub mod objectives;
