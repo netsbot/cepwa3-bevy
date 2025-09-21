@@ -3,13 +3,20 @@ use crate::components::physics_object::PhysicsObject;
 use crate::components::propulsion::Propulsion;
 use crate::config::Config;
 use crate::systems::objectives::ObjectiveTracker;
-use crate::constants::{EARTH_RADIUS, LEO_MIN_ALTITUDE, LEO_MAX_ALTITUDE, LEO_REQUIRED_TIME, 
-    MOON_ORBIT_MIN_ALTITUDE, MOON_ORBIT_MAX_ALTITUDE, MOON_ORBIT_REQUIRED_TIME, MOON_RADIUS};
+use crate::constants::{EARTH_RADIUS, LEO_MIN_ALTITUDE, MOON_RADIUS};
 use bevy::prelude::*;
 
-pub fn create_ui(mut commands: Commands) {
+pub fn create_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font = asset_server.load("jbnf.ttf");
+    
     commands.spawn((
-        Text::new("pos: (0.0, 0.0)\nvel: (0.0, 0.0)\nrot: 0.0\nthrust: 0.0"),
+        Text::new("thrust: 0.0%\nfuel: 0kg (0%)\ntimewarp: 1.0x\naltitude: 0km\nspeed: 0 m/s"),
+        TextFont {
+            font,
+            font_size: 20.0,
+            ..default()
+        },
+        TextColor(Color::WHITE),
         UserInfoUi,
     ));
 }
@@ -18,7 +25,7 @@ pub fn update_ui_system(
     config: Res<Config>,
     user: Query<(&Transform, &Propulsion, &PhysicsObject, &ObjectiveTracker), With<User>>,
     mut ui: Query<&mut Text, With<UserInfoUi>>,
-    moon_query: Query<&Transform, (Without<User>, With<PhysicsObject>)>,
+    moon_query: Query<(&Transform, &PhysicsObject), (Without<User>, With<PhysicsObject>)>,
 ) {
     let (def_transform, def_propulsion, def_phys, def_tracker) = (
         Transform::default(),
@@ -40,27 +47,38 @@ pub fn update_ui_system(
     };
 
     let pos = user_transform.translation;
-    let vel = physics_object.vel;
-    let rot =
-        user_transform.rotation.to_euler(EulerRot::XYZ).2 * 180.0 / (std::f32::consts::PI) * -1.;
     let thrust = propulsion.thrust_percentage * 100.;
-    let speed = vel.length();
+    let fuel_percentage = (propulsion.fuel / propulsion.max_fuel) * 100.0;
+    let fuel_status = if fuel_percentage <= 0.0 {
+        "❌ NO FUEL"
+    } else if fuel_percentage <= 10.0 {
+        "⚠️ LOW FUEL"
+    } else if fuel_percentage <= 25.0 {
+        "🔶 FUEL LOW"
+    } else {
+        "✓ Fuel OK"
+    };
     
     // Determine central body (closest celestial body) and calculate altitude relative to it
     let distance_from_earth = pos.length();
     let mut closest_moon_distance = f32::INFINITY;
-    for moon_transform in moon_query.iter() {
+    let mut closest_moon_velocity = Vec3::ZERO;
+    for (moon_transform, moon_physics) in moon_query.iter() {
         let distance_to_moon = pos.distance(moon_transform.translation);
         if distance_to_moon < closest_moon_distance {
             closest_moon_distance = distance_to_moon;
+            closest_moon_velocity = moon_physics.vel;
         }
     }
     
-    // Calculate altitude relative to central body
-    let (altitude, central_body_name, is_moon_central) = if closest_moon_distance < distance_from_earth {
-        (closest_moon_distance - MOON_RADIUS, "Moon", true)
+    // Calculate altitude relative to central body and relative speed
+    let (altitude, central_body_name, is_moon_central, relative_speed) = if closest_moon_distance < distance_from_earth {
+        let relative_velocity = physics_object.vel - closest_moon_velocity;
+        (closest_moon_distance - MOON_RADIUS, "Moon", true, relative_velocity.length())
     } else {
-        (distance_from_earth - EARTH_RADIUS, "Earth", false)
+        // Earth is stationary in our reference frame, so Earth velocity is Vec3::ZERO
+        let relative_velocity = physics_object.vel; // Earth velocity is 0 in our coordinate system
+        (distance_from_earth - EARTH_RADIUS, "Earth", false, relative_velocity.length())
     };
 
     // Objective status
@@ -69,55 +87,54 @@ pub fn update_ui_system(
     } else {
         let current_obj = &objective_tracker.progress.current;
         let progress_info = match current_obj {
+            crate::components::objectives::Objective::EscapeMoon => {
+                if is_moon_central {
+                    "Still in Moon's sphere of influence - gain more speed!"
+                } else {
+                    "✓ Escaped Moon's gravity!"
+                }.to_string()
+            }
             crate::components::objectives::Objective::OrbitEarth => {
                 let leo_min = LEO_MIN_ALTITUDE;
-                let leo_max = LEO_MAX_ALTITUDE;
-                let leo_progress = objective_tracker.leo_stopwatch.elapsed_secs();
-                let leo_required = LEO_REQUIRED_TIME;
-                let body_status = if is_moon_central { "❌ Need Earth SOI" } else { "✓ In Earth SOI" };
                 format!(
-                    "Progress: Alt {:.1}km (need {:.1}-{:.1}km from Earth), {}, Stable orbit: {:.1}/{:.1}s",
+                    "Alt {:.1}km (need >{:.1}km from Earth)",
                     altitude / 1000.0,
-                    leo_min / 1000.0,
-                    leo_max / 1000.0,
-                    body_status,
-                    leo_progress,
-                    leo_required
+                    leo_min / 1000.0
                 )
             }
-            crate::components::objectives::Objective::OrbitMoon => {
-                let moon_progress = objective_tracker.moon_orbit_stopwatch.elapsed_secs();
-                let moon_required = MOON_ORBIT_REQUIRED_TIME;
-                let soi_status = if is_moon_central { "✓ In Moon SOI" } else { "❌ Need Moon SOI" };
-                format!(
-                    "Progress: Alt {:.1}km (need {:.1}-{:.1}km from Moon), {}, Orbit: {:.1}/{:.1}s",
-                    altitude / 1000.0,
-                    MOON_ORBIT_MIN_ALTITUDE / 1000.0,
-                    MOON_ORBIT_MAX_ALTITUDE / 1000.0,
-                    soi_status,
-                    moon_progress,
-                    moon_required
-                )
-            }
-            crate::components::objectives::Objective::LandOnMoon => {
-                let distance_status = if is_moon_central { 
-                    format!("Alt {:.1}km from Moon", altitude / 1000.0)
-                } else {
-                    "Need Moon SOI first".to_string()
-                };
-                format!("Progress: {} - Navigate close to land!", distance_status)
+            crate::components::objectives::Objective::LandOnEarth => {
+                format!("Alt {:.1}km from Earth - Get close to land!", altitude / 1000.0)
             }
         };
         
         if objective_tracker.progress.is_completed {
             format!("✓ {} - COMPLETED!\nNext: {}", current_obj.title(), progress_info)
         } else {
-            format!("🎯 {}\n{}", current_obj.title(), progress_info)
+            format!("OBJECTIVE: {}\n{}", current_obj.title(), progress_info)
+        }
+    };
+
+    // Calculate time warp restrictions
+    let timewarp_status = if is_moon_central {
+        if altitude < 5000.0 {
+            "⚠ NO TIMEWARP (Too close to Moon)"
+        } else if altitude < 30000.0 {
+            "⚠ LIMITED TIMEWARP (Near Moon)"
+        } else {
+            "✓ Full timewarp available"
+        }
+    } else {
+        if altitude < 30000.0 {
+            "⚠ NO TIMEWARP (Too close to Earth)"
+        } else if altitude < 100000.0 {
+            "⚠ LIMITED TIMEWARP (Near Earth)"
+        } else {
+            "✓ Full timewarp available"
         }
     };
 
     **ui_text = format!(
-        "pos: ({:.1}, {:.1})\nvel: ({:.1}, {:.1})\nrot: {:.2}\nthrust: {:.1}%\ntimewarp: {:.3}x\naltitude: {:.1}km (from {})\nspeed: {:.1} m/s\n\n{}",
-        pos.x, pos.y, vel.x, vel.y, rot, thrust, config.time_multiplier, altitude / 1000.0, central_body_name, speed, objective_status
+        "thrust: {:.1}%\nfuel: {:.1}kg ({:.1}%) {}\ntimewarp: {:.3}x\naltitude: {:.1}km (from {})\nspeed: {:.1} m/s (relative)\n{}\n\n{}",
+        thrust, propulsion.fuel, fuel_percentage, fuel_status, config.time_multiplier, altitude / 1000.0, central_body_name, relative_speed, timewarp_status, objective_status
     );
 }

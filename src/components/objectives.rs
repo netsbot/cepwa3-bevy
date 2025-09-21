@@ -1,24 +1,16 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum Objective {
+    EscapeMoon,
     OrbitEarth,
-    OrbitMoon,
-    LandOnMoon,
+    LandOnEarth,
 }
 
 impl Objective {
-    pub fn description(&self) -> &'static str {
-        match self {
-            Objective::OrbitEarth => "Achieve stable low Earth orbit (250-400 km altitude)",
-            Objective::OrbitMoon => "Achieve stable orbit around the Moon",
-            Objective::LandOnMoon => "Successfully land on the Moon",
-        }
-    }
-
     pub fn title(&self) -> &'static str {
         match self {
-            Objective::OrbitEarth => "Low Earth Orbit",
-            Objective::OrbitMoon => "Moon Orbit",
-            Objective::LandOnMoon => "Moon Landing",
+            Objective::EscapeMoon => "Escape Moon",
+            Objective::OrbitEarth => "Earth Orbit", 
+            Objective::LandOnEarth => "Earth Landing",
         }
     }
 }
@@ -34,7 +26,7 @@ pub struct ObjectiveProgress {
 impl Default for ObjectiveProgress {
     fn default() -> Self {
         Self {
-            current: Objective::OrbitEarth,
+            current: Objective::EscapeMoon,
             completed: Vec::new(),
             is_completed: false,
             completion_time: None,
@@ -54,9 +46,9 @@ impl ObjectiveProgress {
     pub fn advance_to_next(&mut self) {
         if self.is_completed {
             match self.current {
-                Objective::OrbitEarth => self.current = Objective::OrbitMoon,
-                Objective::OrbitMoon => self.current = Objective::LandOnMoon,
-                Objective::LandOnMoon => {
+                Objective::EscapeMoon => self.current = Objective::OrbitEarth,
+                Objective::OrbitEarth => self.current = Objective::LandOnEarth,
+                Objective::LandOnEarth => {
                     // All objectives completed
                     return;
                 }

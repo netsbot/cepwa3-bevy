@@ -66,7 +66,7 @@ pub fn create_world(
         .id();
 
     // Luna - The traditional large moon (gray)
-    commands.spawn((
+    let luna = commands.spawn((
         ObjectBundle {
             transform: Transform {
                 translation: luna_pos,
@@ -77,7 +77,7 @@ pub fn create_world(
             mesh_material: luna_material.clone(),
         },
         TrajectoryPrediction::new(),
-    ));
+    )).id();
 
     // Europa - Medium blue moon
     commands.spawn((
@@ -93,14 +93,14 @@ pub fn create_world(
         TrajectoryPrediction::new(),
     ));
 
-    // User spacecraft (Green triangle) - spawn on Earth's surface
+    // User spacecraft (Green triangle) - spawn on Moon's surface
     commands.spawn((
         ObjectBundle {
             transform: Transform {
-                translation: Vec3::new(0., EARTH_RADIUS, 0.),
+                translation: luna_pos + Vec3::new(0., MOON_RADIUS, 0.),
                 ..default()
             },
-            physics_object: PhysicsObject::new(user_mass, 8.0, earth_vel, Some(earth)),
+            physics_object: PhysicsObject::new(user_mass, 8.0, luna_vel, Some(luna)),
             mesh2d: Mesh2d(meshes.add(Triangle2dMeshBuilder::new(
                 Vec2::new(0., 12.),
                 Vec2::new(-8., -8.),
@@ -111,7 +111,10 @@ pub fn create_world(
         User,
         Propulsion {
             max_thrust: 1_688_000.,
-            ..default()
+            thrust_percentage: 0.0,
+            fuel: 50_000.0,           // 50,000 kg of fuel (enough for missions)
+            max_fuel: 50_000.0,       // 50,000 kg capacity
+            fuel_consumption_rate: 50.0, // 50 kg/s at full thrust (much more reasonable)
         },
         TrajectoryPrediction::new(),
         ObjectiveTracker::default(),

@@ -1,4 +1,5 @@
 use crate::components::markers::User;
+use crate::components::physics_object::PhysicsObject;
 use bevy::input::ButtonState;
 use bevy::input::mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
@@ -64,14 +65,15 @@ pub fn zoom_camera(
 }
 
 // Pan the 2D camera by dragging with the mouse (middle or left button).
-// This implements incremental panning like the provided p5.js example: track the last
-// mouse position, add the delta to the camera translation each move, and update
-// the last mouse position so successive moves accumulate.
+// Also follows the central body's movement to reduce manual panning.
 pub fn pan_camera(
+    time: Res<Time>,
     mut drag: ResMut<DragState>,
     mut ev_mb: EventReader<MouseButtonInput>,
     window: Single<&Window, With<PrimaryWindow>>,
     mut q_cam: Query<(&mut Transform, &Projection), With<Camera2d>>,
+    user_query: Query<&PhysicsObject, With<User>>,
+    physics_query: Query<(&Transform, &PhysicsObject), Without<Camera2d>>,
 ) {
     for ev in ev_mb.read() {
         if ev.button == MouseButton::Middle || ev.button == MouseButton::Left {
@@ -98,9 +100,22 @@ pub fn pan_camera(
     let delta = current_cursor_pos - drag.1;
 
     for (mut transform, proj) in &mut q_cam {
-        if let Projection::Orthographic(ortho) = proj {
-            // apply incremental delta to camera translation (invert X to match screen coords)
-            transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
+        // Follow central body movement
+        if let Ok(user_physics) = user_query.single() {
+            if let Some(central_body_entity) = user_physics.central_body {
+                if let Ok((_, central_body_physics)) = physics_query.get(central_body_entity) {
+                    let central_body_velocity = central_body_physics.vel;
+                    transform.translation += central_body_velocity * time.delta_secs();
+                }
+            }
+        }
+
+        // Handle manual panning
+        if drag.0 {
+            if let Projection::Orthographic(ortho) = proj {
+                // apply incremental delta to camera translation (invert X to match screen coords)
+                transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
+            }
         }
     }
 

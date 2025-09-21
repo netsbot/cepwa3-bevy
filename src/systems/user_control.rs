@@ -1,5 +1,7 @@
 use crate::components::markers::User;
 use crate::components::propulsion::Propulsion;
+use crate::components::physics_object::PhysicsObject;
+use crate::constants::{EARTH_RADIUS, MOON_RADIUS};
 use crate::config::Config;
 use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
@@ -66,6 +68,8 @@ pub fn time_warp_system(
     mut config: ResMut<Config>,
     mut fixed_time: ResMut<Time<Fixed>>,
     mut stage: Local<u8>,
+    user_query: Query<&Transform, With<User>>,
+    moon_query: Query<&Transform, (Without<User>, With<PhysicsObject>)>,
 ) {
     // (dt, timestep hertz, time multiplier)
     const DT_STAGES: [(f32, f32, u32); 9] = [
@@ -79,6 +83,38 @@ pub fn time_warp_system(
         (1. / 64. * 1250., 64. * 40., 50000),
         (1. / 64. * 2500., 64. * 100., 250000),
     ];
+
+    // Get user position to calculate altitude restrictions
+    let user_position = if let Ok(transform) = user_query.single() {
+        transform.translation
+    } else {
+        return;
+    };
+
+    // Calculate altitude from Earth and Moon
+    let distance_from_earth = user_position.length();
+    let earth_altitude = distance_from_earth - EARTH_RADIUS;
+    
+    let mut closest_moon_distance = f32::INFINITY;
+    for moon_transform in moon_query.iter() {
+        let distance_to_moon = user_position.distance(moon_transform.translation);
+        if distance_to_moon < closest_moon_distance {
+            closest_moon_distance = distance_to_moon;
+        }
+    }
+    let moon_altitude = closest_moon_distance - MOON_RADIUS;
+    
+    // Determine maximum allowed time warp stage based on altitude
+    let max_allowed_stage = if earth_altitude < 30_000.0 || moon_altitude < 5_000.0 {
+        // No time warp allowed below 30km of Earth or 5km of Moon
+        0
+    } else if earth_altitude < 100_000.0 || moon_altitude < 30_000.0 {
+        // Max stage 3 (100x) below 100km of Earth or 30km of Moon
+        3
+    } else {
+        // Full time warp allowed at high altitudes
+        (DT_STAGES.len() - 1) as u8
+    };
 
     let mut stage_changed = false;
     let mut new_stage = *stage;
@@ -96,13 +132,19 @@ pub fn time_warp_system(
                 }
             }
             KeyCode::BracketRight => {
-                if new_stage < (DT_STAGES.len() - 1) as u8 {
+                if new_stage < max_allowed_stage {
                     new_stage += 1;
                     stage_changed = true;
                 }
             }
             _ => (),
         }
+    }
+
+    // Force stage down if we're too low
+    if *stage > max_allowed_stage {
+        new_stage = max_allowed_stage;
+        stage_changed = true;
     }
 
     if stage_changed {
