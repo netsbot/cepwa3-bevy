@@ -1,11 +1,7 @@
-use std::time::Duration;
 use crate::config::Config;
-use crate::systems::prediction::PredictionResource;
 use crate::systems::{ui, user_control};
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
 use systems::{camera, physics, prediction, world_setup};
-use crate::systems::physics::gravity::GravityResource;
 
 mod components;
 mod config;
@@ -19,13 +15,6 @@ impl Plugin for Game {
         app.insert_resource(Config {
             dt: 1. / 64.,
             time_multiplier: 1,
-        });
-        app.insert_resource(PredictionResource {
-            points: Vec::with_capacity(256),
-        });
-        app.insert_resource(GravityResource {
-            accel_1: Vec::new(),
-            accel_2: Vec::new(),
         });
 
         app.insert_resource(camera::DragState::default());
@@ -55,6 +44,7 @@ impl Plugin for Game {
         app.add_systems(
             Update,
             (
+                prediction::calculate_predictions_system,
                 prediction::render_trajectory_predictions,
                 user_control::time_warp_system,
                 user_control::steering_system,

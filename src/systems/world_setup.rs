@@ -2,6 +2,7 @@ use crate::components::markers::User;
 use crate::components::object_bundle::ObjectBundle;
 use crate::components::physics_object::PhysicsObject;
 use crate::components::propulsion::Propulsion;
+use crate::components::trajectory_prediction::TrajectoryPrediction;
 use crate::constants::{DISTANCE_SCALE, EARTH_RADIUS, MOON_RADIUS, PLANET_SCALE};
 use bevy::prelude::*;
 use bevy::render::mesh::Triangle2dMeshBuilder;
@@ -64,26 +65,32 @@ pub fn create_world(
         .id();
 
     // Luna - The traditional large moon (gray)
-    commands.spawn((ObjectBundle {
-        transform: Transform {
-            translation: luna_pos,
-            ..default()
+    commands.spawn((
+        ObjectBundle {
+            transform: Transform {
+                translation: luna_pos,
+                ..default()
+            },
+            physics_object: PhysicsObject::new(luna_mass, MOON_RADIUS, luna_vel, Some(earth)),
+            mesh2d: luna_mesh.clone(),
+            mesh_material: luna_material.clone(),
         },
-        physics_object: PhysicsObject::new(luna_mass, MOON_RADIUS, luna_vel, Some(earth)),
-        mesh2d: luna_mesh.clone(),
-        mesh_material: luna_material.clone(),
-    },));
+        TrajectoryPrediction::new(),
+    ));
 
     // Europa - Medium blue moon
-    commands.spawn((ObjectBundle {
-        transform: Transform {
-            translation: europa_pos,
-            ..default()
+    commands.spawn((
+        ObjectBundle {
+            transform: Transform {
+                translation: europa_pos,
+                ..default()
+            },
+            physics_object: PhysicsObject::new(europa_mass, MOON_RADIUS * 0.8, europa_vel, Some(earth)),
+            mesh2d: europa_mesh.clone(),
+            mesh_material: europa_material.clone(),
         },
-        physics_object: PhysicsObject::new(europa_mass, MOON_RADIUS * 0.8, europa_vel, Some(earth)),
-        mesh2d: europa_mesh.clone(),
-        mesh_material: europa_material.clone(),
-    },));
+        TrajectoryPrediction::new(),
+    ));
 
     // User spacecraft (Green triangle)
     commands.spawn((
@@ -105,5 +112,6 @@ pub fn create_world(
             max_thrust: 1_688_000.,
             ..default()
         },
+        TrajectoryPrediction::new(),
     ));
 }
