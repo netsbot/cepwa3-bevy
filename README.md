@@ -155,7 +155,7 @@ One challenge that I faced during the coding process was the prediction system s
 ## Source Code
 
 ### Preview link
-[GitHub Pages](https://netsbot.github.io/cepwa3)
+[GitHub Pages](https://netsbot.github.io/cepwa3-bevy)
 
 
 ### Include any special setup instructions if needed
