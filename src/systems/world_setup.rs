@@ -25,14 +25,14 @@ pub fn create_world(
     let luna_pos = [384_400_000. * DISTANCE_SCALE, 0., 0.].into(); // Traditional moon distance
     let europa_pos = [
         -280_000_000. * DISTANCE_SCALE,
-        -50_000_000. * DISTANCE_SCALE,
+        0.,
         0.,
     ]
     .into(); // Closer, opposite side
 
     // Calculate velocities for stable orbits
     let luna_speed = 1_022. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt();
-    let europa_speed = 1_280. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt(); // Faster for closer orbit
+    let europa_speed = 1_080. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt(); // Faster for closer orbit
 
     // Moon velocities
     let luna_vel = [0., luna_speed, 0.].into();

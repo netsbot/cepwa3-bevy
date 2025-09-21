@@ -8,9 +8,9 @@ Orbital mechanics and rocket simulation
 
 ### How is it adapted for beginner, intermediate, and advanced audiences?
 
-* **Beginner:** [Explain how the simulation is simplified for new learners.]
-* **Intermediate:** [Describe how more complexity and features are introduced.]
-* **Advanced:** [Detail how the simulation presents the most challenging and comprehensive version of the topic.]
+* **Beginner:** The simulation starts with a simple objective - escape the Moon's gravity well. All controls are clearly displayed on screen, and the trajectory prediction helps visualize where their spacecraft will go. The physics simulation handles the complex orbital mechanics automatically.
+* **Intermediate:** Once escaped from the Moon, learners must navigate to Earth and achieve a stable Low Earth Orbit (LEO). This requires understanding orbital velocity, altitude management, and fuel conservation while dealing with multiple gravitational bodies.
+* **Advanced:** The final challenge involves performing a controlled landing on Earth, which requires precise velocity control, understanding atmospheric entry (simulated through altitude restrictions), and managing fuel reserves throughout the entire multi-stage mission.
 
 ### Elaborate on learning objectives for each audience level.
 
@@ -24,7 +24,14 @@ Orbital mechanics and rocket simulation
 
 ### What interactive elements promote exploration?
 
-Open world mechanics that allows users to freely move their spaceship to anywhere in the simu
+Open world mechanics that allows users to freely move their spaceship to anywhere in the simulation. Key interactive features include:
+
+* **Real-time trajectory prediction** - Shows future orbital path to help plan maneuvers
+* **Multi-body gravitational system** - Earth, Luna (large moon), and Europa (smaller moon) create complex orbital dynamics
+* **Fuel management** - Limited fuel forces strategic thinking about when and how much to thrust
+* **Time warp controls** - Speed up simulation with `[` and `]` keys (restricted near celestial bodies for safety)
+* **Visual feedback** - Live UI showing altitude, speed, fuel status, and current objective progress
+* **Progressive objectives** - Clear goals guide learning from simple escape to complex orbital mechanics
 
 ---
 
@@ -64,15 +71,43 @@ earth.
 ### List features for each audience level
 
 * **Beginner:**
-    * [List key features for beginners.]
+    * Simple escape objective from Moon surface
+    * Clear visual trajectory prediction lines
+    * Real-time UI showing essential information (fuel, thrust, altitude)
+    * Automatic gravity and physics calculations
+    * Forgiving collision detection and physics
+
 * **Intermediate:**
-    * [List key features for intermediate users.]
+    * Multi-body orbital mechanics with Earth and two moons
+    * Fuel consumption and management
+    * Time warp controls for faster simulation
+    * Earth orbit achievement challenge
+    * Central body switching (Moon vs Earth sphere of influence)
+
 * **Advanced:**
-    * [List key features for advanced users.]
+    * Precise landing mechanics requiring velocity control
+    * Complex trajectory planning across multiple gravitational bodies
+    * Fuel optimization across entire mission profile
+    * Full N-body physics simulation with realistic orbital mechanics
+    * Achievement of complete mission from Moon escape to Earth landing
 
 ### User controls: please provide a clear list of all keyboard/mouse controls
 
-* [List keyboard and/or mouse controls, e.g., 'W, A, S, D' for movement, 'Click' to interact, 'Space' to pause.]
+**Spacecraft Control:**
+* `↑` Arrow Up - Increase thrust by 10% (up to 100%)
+* `↓` Arrow Down - Decrease thrust by 10% (down to 0%)
+* `←` Arrow Left - Rotate spacecraft counterclockwise (1° per press)
+* `→` Arrow Right - Rotate spacecraft clockwise (1° per press)
+
+**Time Management:**
+* `[` Left Bracket - Decrease time warp (slower simulation)
+* `]` Right Bracket - Increase time warp (faster simulation, up to 250,000x)
+* Note: Time warp automatically restricted when near celestial bodies for safety
+
+**Camera Controls:**
+* `Mouse Wheel` - Zoom in/out (camera scale from 1x to 100,000x)
+* `Left Mouse Drag` or `Middle Mouse Drag` - Pan camera around the simulation
+* Camera automatically follows central body movement to reduce manual panning
 
 ---
 
@@ -80,24 +115,40 @@ earth.
 
 ### Everything you did beyond the requirements!
 
-I implemented a predictional trajectory feature that shows where the spaceship will go based on its current velocity and
-position. This helps users plan their maneuvers better.
+**Advanced Physics Implementation:**
+* Full N-body gravitational simulation using Verlet integration
+* Real-time trajectory prediction with adaptive timestep optimization
+* Collision detection with continuous collision checking
+* Central body sphere-of-influence switching (Moon vs Earth gravity dominance)
+
+**Educational Enhancements:**
+* Progressive objective system with three difficulty levels
+* Smart time warp restrictions based on altitude for realistic space operations
+* Comprehensive fuel management system with consumption rates
+* Visual trajectory prediction helping users understand orbital mechanics
+
+**Technical Features:**
+* Built with Rust and Bevy game engine for high performance
+* Efficient prediction system using simplified 2-body approximation for speed
+* Smart camera following with automatic central body tracking
+* Scalable physics constants allowing realistic Earth-Moon-spacecraft system
 
 ## Screenshots and Demo
 
-### Screenshots showing different modes, levels, and key features. Paste in.
+### Screenshots
 
-[Insert images here.]
+![](assets/ss1.png)
+![](assets/ss2.png)
 
 ### Demo video link
 
-[Paste your demo video link here.]
+![YouTube link](https://youtu.be/d-lTe6LuVLM)
 
 ---
 
 ## Reflections:
 
-[Write a brief reflection on your experience with this project. What did you learn? What challenges did you face? What would you do differently next time?]
+One challenge that I faced during the coding process was the prediction system since the underlying architecture of my simulator was an N-body simulator, however that would be too inefficient to predict for a lot of future points, therefore I opted for a simple 2 body simulation with larger timesteps so that it can simulate faster.
 
 ---
 
@@ -105,15 +156,24 @@ position. This helps users plan their maneuvers better.
 
 ### p5js preview link
 
-[Paste your p5js preview or GitHub Pages link here.]
+This project is built with Rust/Bevy, not p5.js. See the GitHub repository for the complete source code and pre-built binaries.
 
 ### Include any special setup instructions if needed
 
-[Provide instructions for setting up and running your code locally, if applicable.]
+For better performance there are pre-built Windows and Linux binaries on the releases page.
+
+If you are using a different platform or you do not feel comfortable running random binaries, you can build the project from source by
+```
+git clone https://github.com/netsbot/cepwa3-bevy.git
+cd cepwa3-bevy
+cargo run
+```
+
+Make sure that you have the latest version of rust installed on your computer.
 
 ### GitHub link is optional but no harm adding to your portfolio!
 
-[Paste your GitHub repository link here, if you have one.]
+https://github.com/netsbot/cepwa3-bevy
 
 ---
 
@@ -121,7 +181,8 @@ position. This helps users plan their maneuvers better.
 
 ### Cite all sources that inspired or influenced your project
 
-[List and cite all sources, including tutorials, articles, and other projects.]
+[N-body problem](https://natureofcode.com/forces/#the-n-body-problem)
+[Bevy cheat book](bevy-cheatbook.github.io/introduction.html)
 
 ### Anyone gave useful feedback? Put here too!
 

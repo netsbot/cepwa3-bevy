@@ -1,10 +1,33 @@
+fn check_earth_landing_objective(
+    tracker: &mut ObjectiveTracker,
+    central_body_distance: f32,
+    central_body_radius: f32,
+    is_moon_central: bool,
+) {
+    // For earth landing, we must be closest to Earth (not Moon)
+    if is_moon_central {
+        return;
+    }
+
+    // Check if we're close enough to Earth to consider it a landing
+    // Use a more reasonable landing tolerance (1km above surface)
+    let landing_tolerance = 1000.0; // 1km
+    let altitude_above_surface = central_body_distance - central_body_radius;
+    
+    if altitude_above_surface <= landing_tolerance {
+        tracker.progress.complete_current(central_body_distance);
+        info!(
+            "Earth landing achieved! Altitude above surface: {:.1} m",
+            altitude_above_surface
+        );
+    }
+}
 use crate::components::markers::User;
 use crate::components::objectives::{Objective, ObjectiveProgress};
 use crate::components::physics_object::PhysicsObject;
 use crate::constants::{
     EARTH_RADIUS, LEO_MIN_ALTITUDE,
     MOON_RADIUS, LEO_REQUIRED_TIME,
-    MOON_ORBIT_MAX_ALTITUDE, MOON_ORBIT_REQUIRED_TIME,
 };
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
@@ -14,7 +37,6 @@ pub struct ObjectiveTracker {
     pub progress: ObjectiveProgress,
     pub check_stopwatch: Stopwatch,
     pub leo_stopwatch: Stopwatch,
-    pub moon_orbit_stopwatch: Stopwatch,
 }
 
 impl Default for ObjectiveTracker {
@@ -23,7 +45,6 @@ impl Default for ObjectiveTracker {
             progress: ObjectiveProgress::default(),
             check_stopwatch: Stopwatch::new(),
             leo_stopwatch: Stopwatch::new(),
-            moon_orbit_stopwatch: Stopwatch::new(),
         }
     }
 }
@@ -110,8 +131,8 @@ pub fn objectives_system(
 
 fn check_escape_moon_objective(
     tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
+    _central_body_distance: f32,
+    _central_body_radius: f32,
     _position: Vec3,
     _central_body_position: Vec3,
     _velocity: Vec3,
@@ -176,102 +197,5 @@ fn check_orbit_objective(
     } else {
         // Reset LEO stopwatch if we leave the altitude range
         tracker.leo_stopwatch.reset();
-    }
-}
-
-fn check_moon_orbit_objective(
-    tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
-    position: Vec3,
-    central_body_position: Vec3,
-    velocity: Vec3,
-    time: &Time,
-    is_moon_central: bool,
-) {
-    // For moon orbit objective, Moon must be the central body
-    if !is_moon_central {
-        tracker.moon_orbit_stopwatch.reset();
-        return;
-    }
-
-    // Calculate altitude above central body's surface (Moon)
-    let altitude = central_body_distance - central_body_radius;
-
-    // Check if below maximum moon orbit altitude (30 km above Moon surface)
-    if altitude <= MOON_ORBIT_MAX_ALTITUDE {
-        // Check if orbit is stable by verifying velocity is roughly perpendicular to position relative to central body
-        let relative_position = position - central_body_position;
-        let dot_product = relative_position.normalize().dot(velocity.normalize()).abs();
-        let is_orbital_velocity = dot_product < 0.3; // Less than ~17 degrees off perpendicular
-
-        if is_orbital_velocity {
-            // Tick the moon orbit stopwatch
-            tracker.moon_orbit_stopwatch.tick(time.delta());
-            
-            // Check if we've been in stable moon orbit long enough
-            if tracker.moon_orbit_stopwatch.elapsed_secs() >= MOON_ORBIT_REQUIRED_TIME {
-                tracker.progress.complete_current(tracker.moon_orbit_stopwatch.elapsed_secs());
-                info!("Moon orbit achieved! Time in orbit: {:.1}s, Altitude: {:.1}km", 
-                    tracker.moon_orbit_stopwatch.elapsed_secs(), 
-                    altitude / 1000.0);
-            }
-        } else {
-            // Reset stopwatch if not in stable orbit
-            tracker.moon_orbit_stopwatch.reset();
-        }
-    } else {
-        // Reset moon orbit stopwatch if we leave the altitude range
-        tracker.moon_orbit_stopwatch.reset();
-    }
-}
-
-fn check_moon_landing_objective(
-    tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
-    is_moon_central: bool,
-) {
-    // For moon landing, we must be closest to the Moon
-    if !is_moon_central {
-        return;
-    }
-
-    // Check if we're close enough to the moon to consider it a landing
-    // Use a more reasonable landing tolerance (1km above surface)
-    let landing_tolerance = 1000.0; // 1km
-    let altitude_above_surface = central_body_distance - central_body_radius;
-    
-    if altitude_above_surface <= landing_tolerance {
-        tracker.progress.complete_current(central_body_distance);
-        info!(
-            "Moon landing achieved! Altitude above surface: {:.1} m",
-            altitude_above_surface
-        );
-    }
-}
-
-fn check_earth_landing_objective(
-    tracker: &mut ObjectiveTracker,
-    central_body_distance: f32,
-    central_body_radius: f32,
-    is_moon_central: bool,
-) {
-    // For earth landing, we must be closest to Earth (not Moon)
-    if is_moon_central {
-        return;
-    }
-
-    // Check if we're close enough to Earth to consider it a landing
-    // Use a more reasonable landing tolerance (1km above surface)
-    let landing_tolerance = 1000.0; // 1km
-    let altitude_above_surface = central_body_distance - central_body_radius;
-    
-    if altitude_above_surface <= landing_tolerance {
-        tracker.progress.complete_current(central_body_distance);
-        info!(
-            "Earth landing achieved! Altitude above surface: {:.1} m",
-            altitude_above_surface
-        );
     }
 }
