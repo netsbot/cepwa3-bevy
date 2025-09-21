@@ -24,6 +24,12 @@ bevy = { version = "0.16", default-features = false, features = [
     "x11",
 ] }
 
+## This greatly improves WGPU's performance due to its heavy use of trace! calls
+log = { version = "0.4", features = ["max_level_debug", "release_max_level_warn"] }
+
+[build-dependencies]
+embed-resource = "1"
+
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
 opt-level = 1
