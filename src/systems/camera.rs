@@ -141,3 +141,27 @@ pub fn ignore_camera_scale_for_users(
         transform.scale = Vec3::splat(cam_scale);
     }
 }
+
+/// Camera translation system that follows the central body of the user
+/// Translation += central_body_velocity * dt
+pub fn follow_central_body(
+    time: Res<Time>,
+    mut camera_query: Query<&mut Transform, With<Camera2d>>,
+    user_query: Query<&PhysicsObject, With<User>>,
+    physics_query: Query<&PhysicsObject, Without<Camera2d>>,
+) {
+    // Get the user's central body
+    if let Ok(user_physics) = user_query.single() {
+        if let Some(central_body_entity) = user_physics.central_body {
+            if let Ok(central_body_physics) = physics_query.get(central_body_entity) {
+                let central_body_velocity = central_body_physics.vel;
+                let dt = time.delta_secs();
+                
+                // Update camera translation: translation += central_body_velocity * dt
+                for mut camera_transform in camera_query.iter_mut() {
+                    camera_transform.translation += central_body_velocity * dt;
+                }
+            }
+        }
+    }
+}

@@ -154,13 +154,13 @@ One challenge that I faced during the coding process was the prediction system s
 
 ## Source Code
 
-### p5js preview link
+### Preview link
+[GitHub Pages](https://netsbot.github.io/cepwa3)
 
-This project is built with Rust/Bevy, not p5.js. See the GitHub repository for the complete source code and pre-built binaries.
 
 ### Include any special setup instructions if needed
 
-For better performance there are pre-built Windows and Linux binaries on the releases page.
+For better performance there are pre-built Linux binaries on the releases page.
 
 If you are using a different platform or you do not feel comfortable running random binaries, you can build the project from source by
 ```
@@ -183,6 +183,7 @@ https://github.com/netsbot/cepwa3-bevy
 
 [N-body problem](https://natureofcode.com/forces/#the-n-body-problem)
 [Bevy cheat book](bevy-cheatbook.github.io/introduction.html)
+[Rocket engine sound](https://pixabay.com/sound-effects/rocket-loop-99748/)
 
 ### Anyone gave useful feedback? Put here too!
 

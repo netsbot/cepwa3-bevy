@@ -51,6 +51,7 @@ impl Plugin for Game {
                 user_control::thrust_adjust_system,
                 camera::zoom_camera,
                 camera::pan_camera,
+                camera::follow_central_body,
                 camera::ignore_camera_scale_for_users,
                 objectives::objectives_system,
                 ui::update_ui_system,

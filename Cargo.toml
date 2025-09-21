@@ -4,8 +4,25 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.16.1", features = ["dynamic_linking"] }
 itertools = "0.14.0"
+bevy = { version = "0.16", default-features = false, features = [
+    "bevy_asset",
+    "bevy_color",
+    "bevy_core_pipeline",
+    "bevy_gizmos",
+    "bevy_log",
+    "bevy_render",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_ui_picking_backend",
+    "bevy_window",
+    "bevy_winit",
+    "custom_cursor",
+    "default_font",
+    "multi_threaded",
+    "webgl2",
+    "x11",
+] }
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
