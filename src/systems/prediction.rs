@@ -15,7 +15,6 @@ pub fn calculate_predictions_system(
     physics_query: Query<(Entity, &Transform, &PhysicsObject), Without<User>>,
 ) {
     for (_entity, transform, phys, mut prediction) in &mut prediction_query {
-        
         if phys.vel.length_squared() < 2. {
             prediction.points.clear();
             continue;
@@ -41,7 +40,7 @@ pub fn calculate_predictions_system(
 
         let mut simulated_position = transform.translation;
         let mut simulated_velocity = phys.vel;
-        
+
         // Also simulate the central body's movement (important for Moon orbits)
         let mut simulated_central_position = central_transform.translation;
         let simulated_central_velocity = central_phys.vel;
@@ -60,14 +59,14 @@ pub fn calculate_predictions_system(
             let distance_sq_softened = distance_vec.length_squared() + SOFTENING.powi(2);
             let inv_r_cubed = distance_sq_softened.powf(-1.5);
             let accel = G * central_phys.mass * inv_r_cubed * distance_vec;
-            
+
             // Update spacecraft (gravity from central body only)
             simulated_velocity += accel * dt;
             simulated_position += simulated_velocity * dt;
-            
+
             // Update central body position (assume it continues with constant velocity)
             simulated_central_position += simulated_central_velocity * dt;
-            
+
             // Store the position relative to the current central body position
             // This makes orbits appear as circles around the central body
             let relative_position = simulated_position - simulated_central_position;

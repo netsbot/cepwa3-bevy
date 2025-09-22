@@ -9,7 +9,7 @@ impl Objective {
     pub fn title(&self) -> &'static str {
         match self {
             Objective::EscapeMoon => "Escape Moon",
-            Objective::OrbitEarth => "Earth Orbit", 
+            Objective::OrbitEarth => "Earth Orbit",
             Objective::LandOnEarth => "Earth Landing",
         }
     }

@@ -1,13 +1,9 @@
 use crate::components::markers::User;
 use crate::components::objectives::{Objective, ObjectiveProgress};
 use crate::components::physics_object::PhysicsObject;
-use crate::constants::{
-    EARTH_RADIUS, LEO_MIN_ALTITUDE,
-    MOON_RADIUS, LEO_REQUIRED_TIME,
-};
+use crate::constants::{EARTH_RADIUS, LEO_MIN_ALTITUDE, LEO_REQUIRED_TIME, MOON_RADIUS};
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
-
 
 /// Context about the celestial body the user is currently orbiting/near
 struct CelestialBodyContext {
@@ -36,16 +32,17 @@ fn check_earth_landing_objective(
     // Use a more reasonable landing tolerance (1km above surface)
     let landing_tolerance = 1000.0; // 1km
     let altitude_above_surface = celestial_context.distance - celestial_context.radius;
-    
+
     if altitude_above_surface <= landing_tolerance {
-        tracker.progress.complete_current(celestial_context.distance);
+        tracker
+            .progress
+            .complete_current(celestial_context.distance);
         info!(
             "Earth landing achieved! Altitude above surface: {:.1} m",
             altitude_above_surface
         );
     }
 }
-
 
 #[derive(Component)]
 pub struct ObjectiveTracker {
@@ -80,12 +77,12 @@ pub fn objectives_system(
 
         let position = transform.translation;
         let velocity = physics.vel;
-        
+
         // Determine central body (closest celestial body)
         let distance_from_earth = position.length();
         let mut closest_moon_distance = f32::INFINITY;
         let mut closest_moon_position = Vec3::ZERO;
-        
+
         for moon_transform in moon_query.iter() {
             let distance_to_moon = position.distance(moon_transform.translation);
             if distance_to_moon < closest_moon_distance {
@@ -93,11 +90,16 @@ pub fn objectives_system(
                 closest_moon_position = moon_transform.translation;
             }
         }
-        
+
         // Update central body based on closest object
-        let (central_body_distance, central_body_radius, central_body_position, is_moon_central) = 
+        let (central_body_distance, central_body_radius, central_body_position, is_moon_central) =
             if closest_moon_distance < distance_from_earth {
-                (closest_moon_distance, MOON_RADIUS, closest_moon_position, true)
+                (
+                    closest_moon_distance,
+                    MOON_RADIUS,
+                    closest_moon_position,
+                    true,
+                )
             } else {
                 (distance_from_earth, EARTH_RADIUS, Vec3::ZERO, false)
             };
@@ -109,32 +111,17 @@ pub fn objectives_system(
             is_moon_central,
         };
 
-        let user_context = UserContext {
-            position,
-            velocity,
-        };
+        let user_context = UserContext { position, velocity };
 
         match tracker.progress.current {
             Objective::EscapeMoon => {
-                check_escape_moon_objective(
-                    &mut tracker,
-                    &celestial_context,
-                    &time,
-                );
+                check_escape_moon_objective(&mut tracker, &celestial_context, &time);
             }
             Objective::OrbitEarth => {
-                check_orbit_objective(
-                    &mut tracker,
-                    &celestial_context,
-                    &user_context,
-                    &time,
-                );
+                check_orbit_objective(&mut tracker, &celestial_context, &user_context, &time);
             }
             Objective::LandOnEarth => {
-                check_earth_landing_objective(
-                    &mut tracker, 
-                    &celestial_context,
-                );
+                check_earth_landing_objective(&mut tracker, &celestial_context);
             }
         }
 
@@ -154,11 +141,16 @@ fn check_escape_moon_objective(
     if !celestial_context.is_moon_central {
         // We've escaped the Moon's sphere of influence!
         tracker.leo_stopwatch.tick(time.delta());
-        
+
         // Check if we've been away from the Moon long enough
         if tracker.leo_stopwatch.elapsed_secs() >= LEO_REQUIRED_TIME {
-            tracker.progress.complete_current(tracker.leo_stopwatch.elapsed_secs());
-            info!("Moon escape achieved! Time away from Moon: {:.1}s", tracker.leo_stopwatch.elapsed_secs());
+            tracker
+                .progress
+                .complete_current(tracker.leo_stopwatch.elapsed_secs());
+            info!(
+                "Moon escape achieved! Time away from Moon: {:.1}s",
+                tracker.leo_stopwatch.elapsed_secs()
+            );
         }
     } else {
         // Still in Moon's sphere of influence
@@ -185,17 +177,25 @@ fn check_orbit_objective(
     if altitude >= LEO_MIN_ALTITUDE {
         // Check if orbit is stable by verifying velocity is roughly perpendicular to position
         let relative_position = user_context.position - celestial_context.position;
-        let dot_product = relative_position.normalize().dot(user_context.velocity.normalize()).abs();
+        let dot_product = relative_position
+            .normalize()
+            .dot(user_context.velocity.normalize())
+            .abs();
         let is_orbital_velocity = dot_product < 0.3; // Less than ~17 degrees off perpendicular
 
         if is_orbital_velocity {
             // Tick the LEO stopwatch
             tracker.leo_stopwatch.tick(time.delta());
-            
+
             // Check if we've been in stable LEO long enough
             if tracker.leo_stopwatch.elapsed_secs() >= LEO_REQUIRED_TIME {
-                tracker.progress.complete_current(tracker.leo_stopwatch.elapsed_secs());
-                info!("Low Earth Orbit achieved! Time in orbit: {:.1}s", tracker.leo_stopwatch.elapsed_secs());
+                tracker
+                    .progress
+                    .complete_current(tracker.leo_stopwatch.elapsed_secs());
+                info!(
+                    "Low Earth Orbit achieved! Time in orbit: {:.1}s",
+                    tracker.leo_stopwatch.elapsed_secs()
+                );
             }
         } else {
             // Reset stopwatch if not in stable orbit

@@ -103,17 +103,19 @@ pub fn pan_camera(
         // Follow central body movement
         if let Ok(user_physics) = user_query.single()
             && let Some(central_body_entity) = user_physics.central_body
-            && let Ok((_, central_body_physics)) = physics_query.get(central_body_entity) {
-                let central_body_velocity = central_body_physics.vel;
-                transform.translation += central_body_velocity * time.delta_secs();
-            }
+            && let Ok((_, central_body_physics)) = physics_query.get(central_body_entity)
+        {
+            let central_body_velocity = central_body_physics.vel;
+            transform.translation += central_body_velocity * time.delta_secs();
+        }
 
         // Handle manual panning
         if drag.0
-            && let Projection::Orthographic(ortho) = proj {
-                // apply incremental delta to camera translation (invert X to match screen coords)
-                transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
-            }
+            && let Projection::Orthographic(ortho) = proj
+        {
+            // apply incremental delta to camera translation (invert X to match screen coords)
+            transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
+        }
     }
 
     // update last cursor so next frame uses incremental movement
@@ -150,13 +152,14 @@ pub fn follow_central_body(
     // Get the user's central body
     if let Ok(user_physics) = user_query.single()
         && let Some(central_body_entity) = user_physics.central_body
-        && let Ok(central_body_physics) = physics_query.get(central_body_entity) {
-            let central_body_velocity = central_body_physics.vel;
-            let dt = time.delta_secs();
-            
-            // Update camera translation: translation += central_body_velocity * dt
-            for mut camera_transform in camera_query.iter_mut() {
-                camera_transform.translation += central_body_velocity * dt;
-            }
+        && let Ok(central_body_physics) = physics_query.get(central_body_entity)
+    {
+        let central_body_velocity = central_body_physics.vel;
+        let dt = time.delta_secs();
+
+        // Update camera translation: translation += central_body_velocity * dt
+        for mut camera_transform in camera_query.iter_mut() {
+            camera_transform.translation += central_body_velocity * dt;
         }
+    }
 }

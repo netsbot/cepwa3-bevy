@@ -1,7 +1,6 @@
 use bevy::prelude::Component;
 
-#[derive(Component)]
-#[derive(Clone)]
+#[derive(Component, Clone)]
 pub struct User;
 
 #[derive(Component)]

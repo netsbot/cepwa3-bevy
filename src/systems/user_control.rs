@@ -1,8 +1,8 @@
 use crate::components::markers::User;
-use crate::components::propulsion::Propulsion;
 use crate::components::physics_object::PhysicsObject;
-use crate::constants::{EARTH_RADIUS, MOON_RADIUS};
+use crate::components::propulsion::Propulsion;
 use crate::config::Config;
+use crate::constants::{EARTH_RADIUS, MOON_RADIUS};
 use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
@@ -94,7 +94,7 @@ pub fn time_warp_system(
     // Calculate altitude from Earth and Moon
     let distance_from_earth = user_position.length();
     let earth_altitude = distance_from_earth - EARTH_RADIUS;
-    
+
     let mut closest_moon_distance = f32::INFINITY;
     for moon_transform in moon_query.iter() {
         let distance_to_moon = user_position.distance(moon_transform.translation);
@@ -103,7 +103,7 @@ pub fn time_warp_system(
         }
     }
     let moon_altitude = closest_moon_distance - MOON_RADIUS;
-    
+
     // Determine maximum allowed time warp stage based on altitude
     let max_allowed_stage = if earth_altitude < 30_000.0 || moon_altitude < 5_000.0 {
         // No time warp allowed below 30km of Earth or 5km of Moon

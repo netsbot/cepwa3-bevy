@@ -23,12 +23,7 @@ pub fn create_world(
 
     // Moon positions - spread around Earth for interesting dynamics
     let luna_pos = [384_400_000. * DISTANCE_SCALE, 0., 0.].into(); // Traditional moon distance
-    let europa_pos = [
-        -280_000_000. * DISTANCE_SCALE,
-        0.,
-        0.,
-    ]
-    .into(); // Closer, opposite side
+    let europa_pos = [-280_000_000. * DISTANCE_SCALE, 0., 0.].into(); // Closer, opposite side
 
     // Calculate velocities for stable orbits
     let luna_speed = 1_022. * (PLANET_SCALE.powi(3) / DISTANCE_SCALE).sqrt();
@@ -66,18 +61,20 @@ pub fn create_world(
         .id();
 
     // Luna - The traditional large moon (gray)
-    let luna = commands.spawn((
-        ObjectBundle {
-            transform: Transform {
-                translation: luna_pos,
-                ..default()
+    let luna = commands
+        .spawn((
+            ObjectBundle {
+                transform: Transform {
+                    translation: luna_pos,
+                    ..default()
+                },
+                physics_object: PhysicsObject::new(luna_mass, MOON_RADIUS, luna_vel, Some(earth)),
+                mesh2d: luna_mesh.clone(),
+                mesh_material: luna_material.clone(),
             },
-            physics_object: PhysicsObject::new(luna_mass, MOON_RADIUS, luna_vel, Some(earth)),
-            mesh2d: luna_mesh.clone(),
-            mesh_material: luna_material.clone(),
-        },
-        TrajectoryPrediction::new(),
-    )).id();
+            TrajectoryPrediction::new(),
+        ))
+        .id();
 
     // Europa - Medium blue moon
     commands.spawn((
@@ -86,7 +83,12 @@ pub fn create_world(
                 translation: europa_pos,
                 ..default()
             },
-            physics_object: PhysicsObject::new(europa_mass, MOON_RADIUS * 0.8, europa_vel, Some(earth)),
+            physics_object: PhysicsObject::new(
+                europa_mass,
+                MOON_RADIUS * 0.8,
+                europa_vel,
+                Some(earth),
+            ),
             mesh2d: europa_mesh.clone(),
             mesh_material: europa_material.clone(),
         },
@@ -112,8 +114,8 @@ pub fn create_world(
         Propulsion {
             max_thrust: 1_688_000.,
             thrust_percentage: 0.0,
-            fuel: 50_000.0,           // 50,000 kg of fuel (enough for missions)
-            max_fuel: 50_000.0,       // 50,000 kg capacity
+            fuel: 50_000.0,              // 50,000 kg of fuel (enough for missions)
+            max_fuel: 50_000.0,          // 50,000 kg capacity
             fuel_consumption_rate: 50.0, // 50 kg/s at full thrust (much more reasonable)
         },
         TrajectoryPrediction::new(),

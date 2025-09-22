@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::systems::{ui, user_control, objectives};
+use crate::systems::{objectives, ui, user_control};
 use bevy::prelude::*;
 use systems::{camera, physics, prediction, world_setup};
 
