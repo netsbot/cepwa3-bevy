@@ -62,7 +62,7 @@ body {
     z-index: 2;
 }
 </style>
-<link rel="modulepreload" href="./cepwa3-bevy-d01626cf0c02b4b9.js" crossorigin="anonymous" integrity="sha384-FOmZyO1PXfTb+3CIzPkIYikY7ZzUcQEIom8i3UVywg7VqOxn5yDg5+OxAES5vUfF"><link rel="preload" href="./cepwa3-bevy-d01626cf0c02b4b9_bg.wasm" crossorigin="anonymous" integrity="sha384-UpqvAiH5MWIfd7hQR3FlZjiW66GgFdPCXSvimMzMqhZkRmkUOpvvttGNPr5z76Ty" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="./cepwa3-bevy-24d4d7be7fc854a5.js" crossorigin="anonymous" integrity="sha384-FOmZyO1PXfTb+3CIzPkIYikY7ZzUcQEIom8i3UVywg7VqOxn5yDg5+OxAES5vUfF"><link rel="preload" href="./cepwa3-bevy-24d4d7be7fc854a5_bg.wasm" crossorigin="anonymous" integrity="sha384-hbjFcKokWMC05oF3WQ+cLmp2Icl3jbgrZkNTzsmMypEuEUN1iAZcXZE7bVm4saqv" as="fetch" type="application/wasm"></head>
 <body>
 <script>// Insert hack to make sound autoplay on Chrome as soon as the user interacts with the tab:
 // https://developers.google.com/web/updates/2018/11/web-audio-autoplay#moving-forward
@@ -127,16 +127,10 @@ body {
     });
 })();
 </script>
-<div class="game-container">
-    <div class="lds-dual-ring"></div>
-    <canvas id="bevy">
-        Javascript and support for canvas is required
-    </canvas>
-</div>
 
 <script type="module">
-import init, * as bindings from './cepwa3-bevy-d01626cf0c02b4b9.js';
-const wasm = await init({ module_or_path: './cepwa3-bevy-d01626cf0c02b4b9_bg.wasm' });
+import init, * as bindings from './cepwa3-bevy-24d4d7be7fc854a5.js';
+const wasm = await init({ module_or_path: './cepwa3-bevy-24d4d7be7fc854a5_bg.wasm' });
 
 
 window.wasmBindings = bindings;
