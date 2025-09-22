@@ -115,23 +115,10 @@ earth.
 
 ### Everything you did beyond the requirements!
 
-**Advanced Physics Implementation:**
 * Full N-body gravitational simulation using Verlet integration
 * Real-time trajectory prediction with adaptive timestep optimization
-* Collision detection with continuous collision checking
-* Central body sphere-of-influence switching (Moon vs Earth gravity dominance)
-
-**Educational Enhancements:**
 * Progressive objective system with three difficulty levels
-* Smart time warp restrictions based on altitude for realistic space operations
-* Comprehensive fuel management system with consumption rates
 * Visual trajectory prediction helping users understand orbital mechanics
-
-**Technical Features:**
-* Built with Rust and Bevy game engine for high performance
-* Efficient prediction system using simplified 2-body approximation for speed
-* Smart camera following with automatic central body tracking
-* Scalable physics constants allowing realistic Earth-Moon-spacecraft system
 
 ## Screenshots and Demo
 

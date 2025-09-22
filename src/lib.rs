@@ -18,6 +18,7 @@ impl Plugin for Game {
         });
 
         app.insert_resource(camera::DragState::default());
+        app.insert_resource(camera::CameraOffset::default());
         app.insert_resource(Time::<Fixed>::from_hz(64.));
         app.add_plugins(DefaultPlugins);
         app.add_systems(
@@ -49,9 +50,10 @@ impl Plugin for Game {
                 user_control::time_warp_system,
                 user_control::steering_system,
                 user_control::thrust_adjust_system,
+                camera::recenter_camera_on_user,
                 camera::zoom_camera,
                 camera::pan_camera,
-                camera::follow_central_body,
+                camera::camera_follow_user,
                 camera::ignore_camera_scale_for_users,
                 objectives::objectives_system,
                 ui::update_ui_system,

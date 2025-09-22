@@ -105,16 +105,18 @@ pub fn time_warp_system(
     let moon_altitude = closest_moon_distance - MOON_RADIUS;
 
     // Determine maximum allowed time warp stage based on altitude
-    let max_allowed_stage = if earth_altitude < 30_000.0 || moon_altitude < 5_000.0 {
-        // No time warp allowed below 30km of Earth or 5km of Moon
-        0
-    } else if earth_altitude < 100_000.0 || moon_altitude < 30_000.0 {
-        // Max stage 3 (100x) below 100km of Earth or 30km of Moon
-        3
-    } else {
-        // Full time warp allowed at high altitudes
-        (DT_STAGES.len() - 1) as u8
-    };
+    // let max_allowed_stage = if earth_altitude < 30_000.0 || moon_altitude < 5_000.0 {
+    //     // No time warp allowed below 30km of Earth or 5km of Moon
+    //     0
+    // } else if earth_altitude < 100_000.0 || moon_altitude < 30_000.0 {
+    //     // Max stage 3 (100x) below 100km of Earth or 30km of Moon
+    //     3
+    // } else {
+    //     // Full time warp allowed at high altitudes
+    //     (DT_STAGES.len() - 1) as u8
+    // };
+
+    let max_allowed_stage = (DT_STAGES.len() - 1) as u8; // --- IGNORE ---
 
     let mut stage_changed = false;
     let mut new_stage = *stage;

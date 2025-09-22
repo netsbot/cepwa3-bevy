@@ -1,6 +1,6 @@
 use crate::components::markers::User;
-use crate::components::physics_object::PhysicsObject;
 use bevy::input::ButtonState;
+use bevy::input::keyboard::KeyCode;
 use bevy::input::mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -8,9 +8,18 @@ use bevy::window::PrimaryWindow;
 #[derive(Resource)]
 pub struct DragState(pub bool, pub Vec2);
 
+#[derive(Resource)]
+pub struct CameraOffset(pub Vec2);
+
 impl Default for DragState {
     fn default() -> Self {
         DragState(false, Vec2::ZERO)
+    }
+}
+
+impl Default for CameraOffset {
+    fn default() -> Self {
+        CameraOffset(Vec2::ZERO)
     }
 }
 
@@ -64,16 +73,13 @@ pub fn zoom_camera(
     }
 }
 
-// Pan the 2D camera by dragging with the mouse (middle or left button).
-// Also follows the central body's movement to reduce manual panning.
+// Pan the 2D camera by adjusting offset from the user position
 pub fn pan_camera(
-    time: Res<Time>,
     mut drag: ResMut<DragState>,
+    mut camera_offset: ResMut<CameraOffset>,
     mut ev_mb: EventReader<MouseButtonInput>,
     window: Single<&Window, With<PrimaryWindow>>,
-    mut q_cam: Query<(&mut Transform, &Projection), With<Camera2d>>,
-    user_query: Query<&PhysicsObject, With<User>>,
-    physics_query: Query<(&Transform, &PhysicsObject), Without<Camera2d>>,
+    q_cam: Query<&Projection, With<Camera2d>>,
 ) {
     for ev in ev_mb.read() {
         if ev.button == MouseButton::Middle || ev.button == MouseButton::Left {
@@ -99,27 +105,50 @@ pub fn pan_camera(
     // compute incremental delta since last recorded cursor position
     let delta = current_cursor_pos - drag.1;
 
-    for (mut transform, proj) in &mut q_cam {
-        // Follow central body movement
-        if let Ok(user_physics) = user_query.single()
-            && let Some(central_body_entity) = user_physics.central_body
-            && let Ok((_, central_body_physics)) = physics_query.get(central_body_entity)
-        {
-            let central_body_velocity = central_body_physics.vel;
-            transform.translation += central_body_velocity * time.delta_secs();
-        }
+    // Get camera scale for proper offset scaling
+    let cam_scale = q_cam
+        .iter()
+        .find_map(|proj| match proj {
+            Projection::Orthographic(ortho) => Some(ortho.scale),
+            _ => None,
+        })
+        .unwrap_or(1.0);
 
-        // Handle manual panning
-        if drag.0
-            && let Projection::Orthographic(ortho) = proj
-        {
-            // apply incremental delta to camera translation (invert X to match screen coords)
-            transform.translation += Vec3::new(-delta.x, delta.y, 0.) * ortho.scale;
-        }
-    }
+    // Update camera offset instead of directly moving camera
+    camera_offset.0 += Vec2::new(-delta.x, delta.y) * cam_scale;
 
     // update last cursor so next frame uses incremental movement
     drag.1 = current_cursor_pos;
+}
+
+// Move camera frame to follow user with offset from panning
+pub fn camera_follow_user(
+    camera_offset: Res<CameraOffset>,
+    q_user: Query<&Transform, (With<User>, Without<Camera2d>)>,
+    mut q_camera: Query<&mut Transform, (With<Camera2d>, Without<User>)>,
+) {
+    // Get the user's position
+    let user_transform = match q_user.iter().next() {
+        Some(transform) => transform,
+        None => return, // No user found
+    };
+
+    // Update camera position to follow user with offset
+    for mut camera_transform in &mut q_camera {
+        camera_transform.translation.x = user_transform.translation.x + camera_offset.0.x;
+        camera_transform.translation.y = user_transform.translation.y + camera_offset.0.y;
+        // Keep the camera's Z position unchanged
+    }
+}
+
+// Reset camera offset to center on user when C key is pressed
+pub fn recenter_camera_on_user(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut camera_offset: ResMut<CameraOffset>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyC) {
+        camera_offset.0 = Vec2::ZERO;
+    }
 }
 
 pub fn ignore_camera_scale_for_users(
@@ -138,28 +167,5 @@ pub fn ignore_camera_scale_for_users(
     for mut transform in &mut q_users {
         // only adjust scale so position/rotation stay in world space
         transform.scale = Vec3::splat(cam_scale);
-    }
-}
-
-/// Camera translation system that follows the central body of the user
-/// Translation += central_body_velocity * dt
-pub fn follow_central_body(
-    time: Res<Time>,
-    mut camera_query: Query<&mut Transform, With<Camera2d>>,
-    user_query: Query<&PhysicsObject, With<User>>,
-    physics_query: Query<&PhysicsObject, Without<Camera2d>>,
-) {
-    // Get the user's central body
-    if let Ok(user_physics) = user_query.single()
-        && let Some(central_body_entity) = user_physics.central_body
-        && let Ok(central_body_physics) = physics_query.get(central_body_entity)
-    {
-        let central_body_velocity = central_body_physics.vel;
-        let dt = time.delta_secs();
-
-        // Update camera translation: translation += central_body_velocity * dt
-        for mut camera_transform in camera_query.iter_mut() {
-            camera_transform.translation += central_body_velocity * dt;
-        }
     }
 }
