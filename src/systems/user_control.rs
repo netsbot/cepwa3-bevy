@@ -4,8 +4,8 @@ use crate::components::propulsion::Propulsion;
 use crate::config::Config;
 use crate::constants::{
     EARTH_RADIUS, MOON_RADIUS, ROTATION_STEP_RADIANS, THRUST_ADJUSTMENT_STEP,
-    TIME_WARP_MIN_EARTH_ALTITUDE, TIME_WARP_LIMITED_EARTH_ALTITUDE,
-    TIME_WARP_MIN_MOON_ALTITUDE, TIME_WARP_LIMITED_MOON_ALTITUDE,
+    TIME_WARP_LIMITED_EARTH_ALTITUDE, TIME_WARP_LIMITED_MOON_ALTITUDE,
+    TIME_WARP_MIN_EARTH_ALTITUDE, TIME_WARP_MIN_MOON_ALTITUDE,
 };
 use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
@@ -109,10 +109,14 @@ pub fn time_warp_system(
     let moon_altitude = closest_moon_distance - MOON_RADIUS;
 
     // Determine maximum allowed time warp stage based on altitude
-    let max_allowed_stage = if earth_altitude < TIME_WARP_MIN_EARTH_ALTITUDE || moon_altitude < TIME_WARP_MIN_MOON_ALTITUDE {
+    let max_allowed_stage = if earth_altitude < TIME_WARP_MIN_EARTH_ALTITUDE
+        || moon_altitude < TIME_WARP_MIN_MOON_ALTITUDE
+    {
         // No time warp allowed below minimum safe altitudes
         0
-    } else if earth_altitude < TIME_WARP_LIMITED_EARTH_ALTITUDE || moon_altitude < TIME_WARP_LIMITED_MOON_ALTITUDE {
+    } else if earth_altitude < TIME_WARP_LIMITED_EARTH_ALTITUDE
+        || moon_altitude < TIME_WARP_LIMITED_MOON_ALTITUDE
+    {
         // Limited time warp below higher altitudes
         3
     } else {

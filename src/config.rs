@@ -1,7 +1,7 @@
 use bevy::prelude::Resource;
 
 /// Global game configuration settings
-/// 
+///
 /// Controls physics simulation timing and time acceleration features.
 #[derive(Resource)]
 pub struct Config {

@@ -1,7 +1,7 @@
 use bevy::prelude::Component;
 
 /// Spacecraft propulsion system component
-/// 
+///
 /// Manages thrust output, fuel consumption, and engine parameters
 /// for player and AI controlled spacecraft.
 #[derive(Component)]

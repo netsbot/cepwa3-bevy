@@ -147,9 +147,7 @@ One challenge that I faced during the coding process was the prediction system s
 
 ### Include any special setup instructions if needed
 
-For better performance there are pre-built Linux binaries on the releases page.
-
-If you are using a different platform or you do not feel comfortable running random binaries, you can build the project from source by
+For better performance you can run the project natively by
 ```
 git clone https://github.com/netsbot/cepwa3-bevy.git
 cd cepwa3-bevy

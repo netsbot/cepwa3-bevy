@@ -2,7 +2,7 @@ use bevy::math::Vec3;
 use bevy::prelude::{Component, Entity};
 
 /// Physics simulation data for celestial bodies and spacecraft
-/// 
+///
 /// Contains all the physical properties needed for n-body gravity simulation
 /// and orbital mechanics calculations.
 #[derive(Component, Clone)]
