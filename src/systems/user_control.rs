@@ -2,19 +2,23 @@ use crate::components::markers::User;
 use crate::components::physics_object::PhysicsObject;
 use crate::components::propulsion::Propulsion;
 use crate::config::Config;
-use crate::constants::{EARTH_RADIUS, MOON_RADIUS};
+use crate::constants::{
+    EARTH_RADIUS, MOON_RADIUS, ROTATION_STEP_RADIANS, THRUST_ADJUSTMENT_STEP,
+    TIME_WARP_MIN_EARTH_ALTITUDE, TIME_WARP_LIMITED_EARTH_ALTITUDE,
+    TIME_WARP_MIN_MOON_ALTITUDE, TIME_WARP_LIMITED_MOON_ALTITUDE,
+};
 use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
 
+/// Handles player spacecraft rotation input
 pub fn steering_system(
     mut evr_kbd: EventReader<KeyboardInput>,
     mut query: Query<&mut Transform, With<User>>,
 ) {
-    let mut user_transform = if let Some(transform) = query.iter_mut().next() {
-        transform
-    } else {
-        return;
+    // Use iter_mut().next() for now to avoid deprecation warning
+    let Some(mut user_transform) = query.iter_mut().next() else {
+        return; // No user entity found
     };
 
     for ev in evr_kbd.read() {
@@ -24,24 +28,23 @@ pub fn steering_system(
 
         match &ev.logical_key {
             Key::ArrowLeft => {
-                user_transform.rotation *= Quat::from_rotation_z(std::f32::consts::PI / 180.)
+                user_transform.rotation *= Quat::from_rotation_z(ROTATION_STEP_RADIANS)
             }
             Key::ArrowRight => {
-                user_transform.rotation *= Quat::from_rotation_z(-std::f32::consts::PI / 180.)
+                user_transform.rotation *= Quat::from_rotation_z(-ROTATION_STEP_RADIANS)
             }
             _ => (),
         }
     }
 }
 
+/// Handles player thrust control input
 pub fn thrust_adjust_system(
     mut evr_kbd: EventReader<KeyboardInput>,
     mut query: Query<&mut Propulsion, With<User>>,
 ) {
-    let mut user_propulsion = if let Some(propulsion) = query.iter_mut().next() {
-        propulsion
-    } else {
-        return;
+    let Some(mut user_propulsion) = query.iter_mut().next() else {
+        return; // No user entity found
     };
 
     for ev in evr_kbd.read() {
@@ -52,17 +55,18 @@ pub fn thrust_adjust_system(
         match &ev.logical_key {
             Key::ArrowUp => {
                 user_propulsion.thrust_percentage =
-                    (user_propulsion.thrust_percentage + 0.1).min(1.0);
+                    (user_propulsion.thrust_percentage + THRUST_ADJUSTMENT_STEP).min(1.0);
             }
             Key::ArrowDown => {
                 user_propulsion.thrust_percentage =
-                    (user_propulsion.thrust_percentage - 0.1).max(0.0);
+                    (user_propulsion.thrust_percentage - THRUST_ADJUSTMENT_STEP).max(0.0);
             }
             _ => (),
         }
     }
 }
 
+/// Handles time warp controls and altitude-based restrictions
 pub fn time_warp_system(
     mut evr_kbd: EventReader<KeyboardInput>,
     mut config: ResMut<Config>,
@@ -84,12 +88,12 @@ pub fn time_warp_system(
         (1. / 64. * 2500., 64. * 100., 250000),
     ];
 
-    // Get user position to calculate altitude restrictions
-    let user_position = if let Ok(transform) = user_query.single() {
-        transform.translation
-    } else {
-        return;
+    // Get user position for altitude calculations
+    let Some(user_transform) = user_query.iter().next() else {
+        return; // No user entity found
     };
+
+    let user_position = user_transform.translation;
 
     // Calculate altitude from Earth and Moon
     let distance_from_earth = user_position.length();
@@ -105,18 +109,16 @@ pub fn time_warp_system(
     let moon_altitude = closest_moon_distance - MOON_RADIUS;
 
     // Determine maximum allowed time warp stage based on altitude
-    // let max_allowed_stage = if earth_altitude < 30_000.0 || moon_altitude < 5_000.0 {
-    //     // No time warp allowed below 30km of Earth or 5km of Moon
-    //     0
-    // } else if earth_altitude < 100_000.0 || moon_altitude < 30_000.0 {
-    //     // Max stage 3 (100x) below 100km of Earth or 30km of Moon
-    //     3
-    // } else {
-    //     // Full time warp allowed at high altitudes
-    //     (DT_STAGES.len() - 1) as u8
-    // };
-
-    let max_allowed_stage = (DT_STAGES.len() - 1) as u8; // --- IGNORE ---
+    let max_allowed_stage = if earth_altitude < TIME_WARP_MIN_EARTH_ALTITUDE || moon_altitude < TIME_WARP_MIN_MOON_ALTITUDE {
+        // No time warp allowed below minimum safe altitudes
+        0
+    } else if earth_altitude < TIME_WARP_LIMITED_EARTH_ALTITUDE || moon_altitude < TIME_WARP_LIMITED_MOON_ALTITUDE {
+        // Limited time warp below higher altitudes
+        3
+    } else {
+        // Full time warp allowed at high altitudes
+        (DT_STAGES.len() - 1) as u8
+    };
 
     let mut stage_changed = false;
     let mut new_stage = *stage;

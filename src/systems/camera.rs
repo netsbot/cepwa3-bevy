@@ -134,6 +134,7 @@ pub fn camera_follow_user(
     };
 
     // Update camera position to follow user with offset
+    // This happens continuously, even during panning
     for mut camera_transform in &mut q_camera {
         camera_transform.translation.x = user_transform.translation.x + camera_offset.0.x;
         camera_transform.translation.y = user_transform.translation.y + camera_offset.0.y;

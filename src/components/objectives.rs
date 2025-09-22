@@ -1,7 +1,11 @@
+/// Game objectives that players must complete in sequence
 #[derive(Debug, Clone, PartialEq)]
 pub enum Objective {
+    /// Escape Moon's gravitational influence
     EscapeMoon,
+    /// Achieve stable orbit around Earth
     OrbitEarth,
+    /// Successfully land on Earth's surface
     LandOnEarth,
 }
 
@@ -15,11 +19,16 @@ impl Objective {
     }
 }
 
+/// Tracks the player's progress through game objectives
 #[derive(Debug, Clone)]
 pub struct ObjectiveProgress {
+    /// The objective currently being pursued
     pub current: Objective,
+    /// List of objectives that have been completed
     pub completed: Vec<Objective>,
+    /// Whether the current objective has been completed
     pub is_completed: bool,
+    /// Time when the objective was completed (if any)
     pub completion_time: Option<f32>,
 }
 

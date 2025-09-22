@@ -37,10 +37,7 @@ fn check_earth_landing_objective(
         tracker
             .progress
             .complete_current(celestial_context.distance);
-        info!(
-            "Earth landing achieved! Altitude above surface: {:.1} m",
-            altitude_above_surface
-        );
+        // Earth landing achieved at altitude: {:.1} m
     }
 }
 
@@ -147,10 +144,7 @@ fn check_escape_moon_objective(
             tracker
                 .progress
                 .complete_current(tracker.leo_stopwatch.elapsed_secs());
-            info!(
-                "Moon escape achieved! Time away from Moon: {:.1}s",
-                tracker.leo_stopwatch.elapsed_secs()
-            );
+            // Moon escape achieved! Time away from Moon: {:.1}s
         }
     } else {
         // Still in Moon's sphere of influence
@@ -192,10 +186,7 @@ fn check_orbit_objective(
                 tracker
                     .progress
                     .complete_current(tracker.leo_stopwatch.elapsed_secs());
-                info!(
-                    "Low Earth Orbit achieved! Time in orbit: {:.1}s",
-                    tracker.leo_stopwatch.elapsed_secs()
-                );
+                // Low Earth Orbit achieved! Time in orbit: {:.1}s
             }
         } else {
             // Reset stopwatch if not in stable orbit
